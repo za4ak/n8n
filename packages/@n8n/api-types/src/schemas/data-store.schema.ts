@@ -33,8 +33,8 @@ export const dataStoreSchema = z.object({
 	id: dataStoreIdSchema,
 	name: dataStoreNameSchema,
 	columns: z.array(dataStoreColumnSchema),
-	createdAt: z.date(),
-	updatedAt: z.date(),
+	createdAt: z.string().datetime(),
+	updatedAt: z.string().datetime(),
 });
 export type DataStore = z.infer<typeof dataStoreSchema>;
 export type DataStoreColumn = z.infer<typeof dataStoreColumnSchema>;
