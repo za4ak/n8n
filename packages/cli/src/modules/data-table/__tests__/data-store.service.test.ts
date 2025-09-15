@@ -896,35 +896,31 @@ describe('dataStore', () => {
 				});
 			}
 			{
-				const { count, data } = await dataStoreService.getManyRowsAndCount(
-					dataStoreId,
-					project1.id,
-					{
-						filter: {
-							type: 'and',
-							filters: [
-								{
-									columnName: 'c1',
-									condition: 'eq',
-									value: 3,
-									path: 'a',
-								},
-								{
-									columnName: 'c1',
-									condition: 'eq',
-									value: true,
-									path: 'b.c',
-								},
-								{
-									columnName: 'c1',
-									condition: 'gte',
-									value: d,
-									path: 'd',
-								},
-							],
-						},
+				const { data } = await dataStoreService.getManyRowsAndCount(dataStoreId, project1.id, {
+					filter: {
+						type: 'and',
+						filters: [
+							{
+								columnName: 'c1',
+								condition: 'eq',
+								value: 3,
+								path: 'a',
+							},
+							{
+								columnName: 'c1',
+								condition: 'eq',
+								value: true,
+								path: 'b.c',
+							},
+							{
+								columnName: 'c1',
+								condition: 'gte',
+								value: d,
+								path: 'd',
+							},
+						],
 					},
-				);
+				});
 				expect(data).toEqual([
 					{
 						c1: { a: 3, b: { c: true }, d: d.toISOString() },
