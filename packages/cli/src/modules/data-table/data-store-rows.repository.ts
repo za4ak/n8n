@@ -42,6 +42,13 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type QueryBuilder = SelectQueryBuilder<any>;
 
+function resolvePath(ref: string, path?: string) {
+	if (path) {
+		return `json_extract(${ref}, '$.${path}')`;
+	}
+	return ref;
+}
+
 /**
  * Converts filter conditions to SQL WHERE clauses with parameters.
  *
@@ -62,9 +69,13 @@ function getConditionAndParams(
 	columns?: DataTableColumn[],
 ): [string, Record<string, unknown>] {
 	const paramName = `filter_${index}`;
-	const columnRef = tableReference
-		? `${quoteIdentifier(tableReference, dbType)}.${quoteIdentifier(filter.columnName, dbType)}`
-		: quoteIdentifier(filter.columnName, dbType);
+	const columnRef = resolvePath(
+		tableReference
+			? `${quoteIdentifier(tableReference, dbType)}.${quoteIdentifier(filter.columnName, dbType)}`
+			: quoteIdentifier(filter.columnName, dbType),
+		filter.path,
+	);
+	console.log(columnRef);
 
 	if (filter.value === null) {
 		switch (filter.condition) {
@@ -77,7 +88,9 @@ function getConditionAndParams(
 
 	// Find the column type to normalize the value consistently
 	const columnInfo = columns?.find((col) => col.name === filter.columnName);
-	const value = columnInfo ? normalizeValue(filter.value, columnInfo?.type, dbType) : filter.value;
+	const value = columnInfo
+		? normalizeValue(filter.value, columnInfo?.type, dbType, filter.path)
+		: filter.value;
 
 	// Handle operators that map directly to SQL operators
 	const operators: Record<string, string> = {
@@ -90,7 +103,12 @@ function getConditionAndParams(
 	};
 
 	if (operators[filter.condition]) {
-		return [`${columnRef} ${operators[filter.condition]} :${paramName}`, { [paramName]: value }];
+		const res = [
+			`${columnRef} ${operators[filter.condition]} :${paramName}`,
+			{ [paramName]: value },
+		] as const;
+		console.log(res);
+		return res as never;
 	}
 
 	switch (filter.condition) {
@@ -448,6 +466,7 @@ export class DataStoreRowsRepository {
 	) {
 		em = em ?? this.dataSource.manager;
 		const [countQuery, query] = this.getManyQuery(dataStoreId, dto, em, columns);
+		console.log(query.getSql());
 		const data: DataStoreRowsReturn = await query.select('*').getRawMany();
 		const countResult = await countQuery.select('COUNT(*) as count').getRawOne<{
 			count: number | string | null;
