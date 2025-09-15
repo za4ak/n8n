@@ -162,7 +162,7 @@ export class Column {
 		} else if (type === 'timestamp') {
 			options.type = isPostgres ? 'timestamp' : 'datetime';
 		} else if (type === 'json' && isSqlite) {
-			options.type = 'json';
+			options.type = 'text';
 		} else if (type === 'uuid') {
 			// mysql does not support uuid type
 			if (isMysql) options.type = 'varchar(36)';
