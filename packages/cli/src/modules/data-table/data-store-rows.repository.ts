@@ -45,10 +45,10 @@ type QueryBuilder = SelectQueryBuilder<any>;
 function resolvePath(ref: string, dbType: DataSourceOptions['type'], path?: string) {
 	if (path) {
 		if (dbType === 'postgres') {
-			const args = [ref, ...path.split('.').map((x) => quoteIdentifier(x, dbType))];
+			const args = [ref, ...path.split('.').map((x) => `'${x}'`)];
 			const head = args.slice(0, -1).join('->');
 			const tail = args[args.length - 1];
-			return `${head}->>${tail}`;
+			return `${head}->${tail}`;
 		}
 		return `json_extract(${ref}, '$.${path}')`;
 	}
