@@ -53,7 +53,7 @@ function resolvePath(
 			const args = [ref, ...path.split('.').map((x) => `'${x}'`)];
 			const head = args.slice(0, -1).join('->');
 			const tail = args[args.length - 1];
-			const base = `${head}->${tail}`;
+			const base = `${head}->>${tail}`;
 			if (typeof value === 'number') {
 				return `(${base})::numeric`;
 			}
