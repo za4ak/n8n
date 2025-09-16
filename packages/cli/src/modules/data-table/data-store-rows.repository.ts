@@ -42,13 +42,31 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type QueryBuilder = SelectQueryBuilder<any>;
 
-function resolvePath(ref: string, dbType: DataSourceOptions['type'], path?: string) {
+function resolvePath(
+	ref: string,
+	dbType: DataSourceOptions['type'],
+	value: unknown,
+	path?: string,
+) {
 	if (path) {
 		if (dbType === 'postgres') {
 			const args = [ref, ...path.split('.').map((x) => `'${x}'`)];
 			const head = args.slice(0, -1).join('->');
 			const tail = args[args.length - 1];
-			return `${head}->${tail}`;
+			const base = `${head}->${tail}`;
+			if (typeof value === 'number') {
+				return `(${base})::numeric`;
+			}
+			if (value instanceof Date) {
+				return `(${base})::timestamp`;
+			}
+			if (typeof value === 'boolean') {
+				return `(${base})::boolean`;
+			}
+
+			// by converting to text by default we end up with `true` for an equals NULL check
+			// both for cases where the key exists and is literally NULL and where it doesn't exist
+			return `(${base})::text`;
 		}
 		return `json_extract(${ref}, '$.${path}')`;
 	}
@@ -80,6 +98,7 @@ function getConditionAndParams(
 			? `${quoteIdentifier(tableReference, dbType)}.${quoteIdentifier(filter.columnName, dbType)}`
 			: quoteIdentifier(filter.columnName, dbType),
 		dbType,
+		filter.value,
 		filter.path,
 	);
 	console.log(columnRef);
