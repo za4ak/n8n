@@ -42,8 +42,16 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type QueryBuilder = SelectQueryBuilder<any>;
 
-function resolvePath(ref: string, path?: string) {
+function resolvePath(ref: string, dbType: DataSourceOptions['type'], path?: string) {
 	if (path) {
+		if (dbType === 'postgres') {
+			const args = path
+				.split('.')
+				.map((x) => quoteIdentifier(x, dbType))
+				.join(',');
+			console.log(args);
+			return `json_extract_path(${ref}, ${args})`;
+		}
 		return `json_extract(${ref}, '$.${path}')`;
 	}
 	return ref;
