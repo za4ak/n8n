@@ -81,6 +81,7 @@ function getConditionAndParams(
 		tableReference
 			? `${quoteIdentifier(tableReference, dbType)}.${quoteIdentifier(filter.columnName, dbType)}`
 			: quoteIdentifier(filter.columnName, dbType),
+		dbType,
 		filter.path,
 	);
 	console.log(columnRef);
