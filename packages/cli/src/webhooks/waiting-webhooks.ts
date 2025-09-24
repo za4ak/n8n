@@ -201,6 +201,7 @@ export class WaitingWebhooks implements IWebhookManager {
 		// Remove waitTill information else the execution would stop
 		execution.data.waitTill = undefined;
 
+		// TODO: Figure out why we need these changes, and write a test for this.
 		// Preserve inputOverride before removing the run data
 		const lastRunData = execution.data.resultData.runData[lastNodeExecuted];
 		const preservedInputOverride: ITaskDataConnections | undefined =

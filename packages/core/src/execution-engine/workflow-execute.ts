@@ -1864,14 +1864,14 @@ export class WorkflowExecute {
 								}
 
 								return input.map((item, itemIndex) => {
-									let sourceOverwrite = undefined;
-									if (
-										item.pairedItem &&
-										typeof item.pairedItem === 'object' &&
-										'sourceOverwrite' in item.pairedItem
-									) {
-										sourceOverwrite = item.pairedItem?.sourceOverwrite;
-									}
+									// The sourceOverwrite is necessary for the ai things to do
+									// logs or somethin', need to ask ben about it and write a
+									// test for this
+									const sourceOverwrite =
+										typeof item.pairedItem === 'object' && 'sourceOverwrite' in item.pairedItem
+											? item.pairedItem.sourceOverwrite
+											: undefined;
+
 									return {
 										...item,
 										pairedItem: {
@@ -2226,6 +2226,7 @@ export class WorkflowExecute {
 						} as ITaskDataConnections;
 					}
 
+					// const runDataAlreadyExists = false;
 					const runDataAlreadyExists =
 						!!this.runExecutionData.resultData.runData[executionNode.name][runIndex];
 					if (runDataAlreadyExists) {
@@ -2695,6 +2696,10 @@ export class WorkflowExecute {
 		} else {
 			Logger.debug('Workflow execution finished successfully', { workflowId: workflow.id });
 			fullRunData.finished = true;
+			// TODO: Do we need this actually? I think this was only necessary when
+			// the agent was collecting the responses from the run data itself, with
+			// the requests and responses being coupled and passed back to the agent
+			// this is redundant, right?
 			fullRunData.status = 'success';
 		}
 

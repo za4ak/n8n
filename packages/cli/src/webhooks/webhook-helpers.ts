@@ -389,6 +389,7 @@ export async function executeWebhook(
 		data: IWebhookResponseCallbackData | WebhookResponse,
 	) => void,
 	destinationNode?: string,
+	// TODO: Document this and write a test for it.
 	preservedInputOverride?: ITaskDataConnections,
 ): Promise<string | undefined> {
 	// Get the nodeType to know which responseMode is set

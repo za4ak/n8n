@@ -203,6 +203,7 @@ export class ExecuteContext extends BaseExecuteContext implements IExecuteFuncti
 		return super.getInputItems(inputIndex, connectionType) ?? [];
 	}
 
+	// TODO: do we still need this?
 	getSubnodes(connectionType: NodeConnectionType): string[] {
 		const connections =
 			this.workflow.connectionsByDestinationNode?.[this.node.name]?.[connectionType];
@@ -219,6 +220,7 @@ export class ExecuteContext extends BaseExecuteContext implements IExecuteFuncti
 		return nodeNames;
 	}
 
+	// TODO: do we still need this?
 	getRunIndex(): number {
 		return this.runIndex;
 	}
