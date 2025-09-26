@@ -302,14 +302,14 @@ export class DataStoreController {
 
 	@Patch('/:dataStoreId/rows')
 	@ProjectScope('dataStore:writeRow')
-	async updateDataStoreRow(
+	async updateDataStoreRows(
 		req: AuthenticatedRequest<{ projectId: string }>,
 		_res: Response,
 		@Param('dataStoreId') dataStoreId: string,
 		@Body dto: UpdateDataTableRowDto,
 	) {
 		try {
-			return await this.dataStoreService.updateRow(
+			return await this.dataStoreService.updateRows(
 				dataStoreId,
 				req.params.projectId,
 				dto,

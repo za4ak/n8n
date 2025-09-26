@@ -16,6 +16,7 @@ import {
 	DataStoreColumnJsType,
 	DataStoreRows,
 	DataStoreRowReturn,
+	DataStoreRowReturnWithState,
 	UnexpectedError,
 	DataStoreRowsReturn,
 	DATA_TABLE_SYSTEM_COLUMNS,
@@ -291,7 +292,7 @@ export class DataStoreRowsRepository {
 		return inserted;
 	}
 
-	async updateRow<T extends boolean | undefined>(
+	async updateRows<T extends boolean | undefined>(
 		dataStoreId: string,
 		data: Record<string, DataStoreColumnJsType | null>,
 		filter: DataTableFilter,
@@ -299,7 +300,7 @@ export class DataStoreRowsRepository {
 		returnData?: T,
 		em?: EntityManager,
 	): Promise<T extends true ? DataStoreRowReturn[] : true>;
-	async updateRow(
+	async updateRows(
 		dataStoreId: string,
 		data: Record<string, DataStoreColumnJsType | null>,
 		filter: DataTableFilter,
@@ -317,21 +318,13 @@ export class DataStoreRowsRepository {
 			this.dataSource.driver.escape(x),
 		);
 		const selectColumns = [...escapedSystemColumns, ...escapedColumns];
-		const setData = { ...data };
-
-		for (const column of columns) {
-			if (column.name in setData) {
-				setData[column.name] = normalizeValue(setData[column.name], column.type, dbType);
-			}
-		}
+		const setData = this.prepareUpdateData(data, columns, dbType);
 
 		let affectedRows: Array<Pick<DataStoreRowReturn, 'id'>> = [];
 		if (!useReturning && returnData) {
 			// Only Postgres supports RETURNING statement on updates (with our typeorm),
 			// on other engines we must query the list of updates rows later by ID
-			const selectQuery = em.createQueryBuilder().select('id').from(table, 'dataTable');
-			this.applyFilters(selectQuery, filter, 'dataTable', columns);
-			affectedRows = await selectQuery.getRawMany<{ id: number }>();
+			affectedRows = await this.getAffectedRowsForUpdate(dataStoreId, filter, columns, em, true);
 		}
 
 		setData.updatedAt = normalizeValue(new Date(), 'date', dbType);
@@ -357,6 +350,37 @@ export class DataStoreRowsRepository {
 
 		const ids = affectedRows.map((row) => row.id);
 		return await this.getManyByIds(dataStoreId, ids, columns, em);
+	}
+
+	async dryRunUpdateRows(
+		dataStoreId: string,
+		data: Record<string, DataStoreColumnJsType | null>,
+		filter: DataTableFilter,
+		columns: DataTableColumn[],
+		em?: EntityManager,
+	): Promise<DataStoreRowReturnWithState[]> {
+		em = em ?? this.dataSource.manager;
+		const dbType = this.dataSource.options.type;
+
+		const beforeRows = await this.getAffectedRowsForUpdate(dataStoreId, filter, columns, em, false);
+
+		const preparedData = this.prepareUpdateData(data, columns, dbType);
+
+		const afterRows: DataStoreRowReturn[] = beforeRows.map((row) => {
+			const updatedRow = { ...row };
+			for (const [key, value] of Object.entries(preparedData)) {
+				updatedRow[key] = value;
+			}
+			updatedRow.updatedAt = new Date();
+			return updatedRow;
+		});
+
+		const pairs: DataStoreRowReturnWithState[] = [];
+		for (let i = 0; i < beforeRows.length; i++) {
+			pairs.push({ ...beforeRows[i], n8nState: 'before' });
+			pairs.push({ ...afterRows[i], n8nState: 'after' });
+		}
+		return pairs;
 	}
 
 	async deleteRows(
@@ -566,5 +590,43 @@ export class DataStoreRowsRepository {
 	private applyPagination(query: QueryBuilder, dto: ListDataStoreContentQueryDto): void {
 		query.skip(dto.skip ?? 0);
 		if (dto.take) query.take(dto.take);
+	}
+
+	private async getAffectedRowsForUpdate<T extends boolean>(
+		dataStoreId: string,
+		filter: DataTableFilter,
+		columns: DataTableColumn[],
+		em: EntityManager,
+		idsOnly: T,
+	): Promise<T extends true ? Array<Pick<DataStoreRowReturn, 'id'>> : DataStoreRowReturn[]> {
+		const table = toTableName(dataStoreId);
+		const selectColumns = idsOnly ? 'id' : '*';
+		const selectQuery = em.createQueryBuilder().select(selectColumns).from(table, 'dataTable');
+		this.applyFilters(selectQuery, filter, 'dataTable', columns);
+		const rawRows = await selectQuery.getRawMany();
+
+		if (idsOnly) {
+			return rawRows as T extends true
+				? Array<Pick<DataStoreRowReturn, 'id'>>
+				: DataStoreRowReturn[];
+		}
+
+		return normalizeRows(rawRows, columns) as T extends true
+			? Array<Pick<DataStoreRowReturn, 'id'>>
+			: DataStoreRowReturn[];
+	}
+
+	private prepareUpdateData(
+		data: Record<string, DataStoreColumnJsType | null>,
+		columns: DataTableColumn[],
+		dbType: DataSourceOptions['type'],
+	): Record<string, DataStoreColumnJsType | null> {
+		const setData = { ...data };
+		for (const column of columns) {
+			if (column.name in setData) {
+				setData[column.name] = normalizeValue(setData[column.name], column.type, dbType);
+			}
+		}
+		return setData;
 	}
 }
