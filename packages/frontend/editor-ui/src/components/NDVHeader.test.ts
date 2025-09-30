@@ -11,12 +11,12 @@ describe('NDVHeader', () => {
 		readOnly: false,
 	};
 
-	it('renders docs label with node type name if name is customized', () => {
+	it('renders docs label', () => {
 		const { getByText } = renderComponent(NDVHeader, { props: defaultProps });
-		expect(getByText('Edit Fields Docs')).toBeInTheDocument();
+		expect(getByText('Docs')).toBeInTheDocument();
 	});
 
-	it('renders nodeTypeName if docsUrl is not provided and name is custom', () => {
+	it('renders nodeTypeName if name is custom', () => {
 		const { getByText, queryByText } = renderComponent(NDVHeader, {
 			props: {
 				...defaultProps,
