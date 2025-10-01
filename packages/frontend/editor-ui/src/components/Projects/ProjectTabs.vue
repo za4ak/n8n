@@ -10,6 +10,7 @@ import { processDynamicTabs, type DynamicTabOptions } from '@/utils/modules/tabU
 import { usePostHog } from '@/stores/posthog.store';
 import { useProjectsStore } from '@/stores/projects.store';
 
+import { N8nTabs } from '@n8n/design-system';
 type Props = {
 	showSettings?: boolean;
 	showExecutions?: boolean;
