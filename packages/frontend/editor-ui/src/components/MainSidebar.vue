@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { onClickOutside, type VueInstance } from '@vueuse/core';
 
 import { useI18n } from '@n8n/i18n';
+import type { IMenuItem } from '@n8n/design-system';
 import {
 	N8nNavigationDropdown,
 	N8nTooltip,
@@ -19,7 +20,6 @@ import {
 	N8nIcon,
 	N8nButton,
 } from '@n8n/design-system';
-import type { IMenuItem } from '@n8n/design-system';
 import {
 	ABOUT_MODAL_KEY,
 	EXPERIMENT_TEMPLATE_RECO_V2_KEY,
@@ -58,23 +58,8 @@ import { useKeybindings } from '@/composables/useKeybindings';
 import { useCalloutHelpers } from '@/composables/useCalloutHelpers';
 import { usePostHog } from '@/stores/posthog.store';
 
-import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus';
-import {
-	N8nActionDropdown,
-	N8nAvatar,
-	N8nButton,
-	N8nIcon,
-	N8nIconButton,
-	N8nLink,
-	N8nMenu,
-	N8nNavigationDropdown,
-	N8nText,
-	N8nTooltip,
-	type IMenuItem,
-} from '@n8n/design-system';
 import ProjectNavigation from './Projects/ProjectNavigation.vue';
 import MainSidebarSourceControl from './MainSidebarSourceControl.vue';
-import { usePostHog } from '@/stores/posthog.store';
 
 const becomeTemplateCreatorStore = useBecomeTemplateCreatorStore();
 const cloudPlanStore = useCloudPlanStore();
