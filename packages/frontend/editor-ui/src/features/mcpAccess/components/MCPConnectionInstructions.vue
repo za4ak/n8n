@@ -10,6 +10,8 @@ import {
 	N8nText,
 	N8nTooltip,
 } from '@n8n/design-system';
+import type { ApiKey } from '@n8n/api-types';
+import { useMCPStore } from '@/features/mcpAccess/mcp.store';
 
 const MCP_ENDPOINT = 'mcp-server/http';
 // TODO: Update once docs page is ready
@@ -17,12 +19,15 @@ const DOCS_URL = 'https://docs.n8n.io/';
 
 type Props = {
 	baseUrl: string;
+	apiKey: ApiKey;
 };
 
 const props = defineProps<Props>();
 
 const { copy, copied, isSupported } = useClipboard();
 const i18n = useI18n();
+
+const mcpStore = useMCPStore();
 
 // mcp.json value that's to be copied
 const connectionString = computed(() => {
@@ -37,7 +42,7 @@ const connectionString = computed(() => {
         "--streamableHttp",
         "${props.baseUrl}${MCP_ENDPOINT}",
         "--header",
-        "authorization:Bearer <YOUR_N8N_API_KEY>"
+        "authorization:Bearer ${redactedKey.value ? '<YOUR_ACCESS_TOKEN_HERE>' : props.apiKey.apiKey}"
       ]
     }
   }
@@ -53,6 +58,15 @@ const connectionCode = computed(() => {
 const fullServerUrl = computed(() => {
 	return props.baseUrl + MCP_ENDPOINT;
 });
+
+const redactedKey = computed(() => {
+	return props.apiKey.apiKey.includes('******');
+});
+
+const refreshApiKey = async () => {
+	// TODO: Handle errors and loading
+	await mcpStore.generateNewApiKey();
+};
 </script>
 
 <template>
@@ -72,32 +86,47 @@ const fullServerUrl = computed(() => {
 					</span>
 					<span :class="$style.url">
 						<code>{{ fullServerUrl }}</code>
-						<N8nTooltip
-							:disables="!isSupported"
-							:content="copied ? i18n.baseText('generic.copied') : i18n.baseText('generic.copy')"
-							placement="right"
-						>
-							<div :class="$style['copy-url-wrapper']">
-								<N8nButton
-									v-if="isSupported"
-									type="tertiary"
-									:icon="copied ? 'clipboard-check' : 'clipboard'"
-									:square="true"
-									:class="$style['copy-url-button']"
-									@click="copy(fullServerUrl)"
-								/>
-							</div>
-						</N8nTooltip>
+						<N8nButton
+							v-if="isSupported"
+							type="tertiary"
+							:icon="copied ? 'check' : 'copy'"
+							:square="true"
+							:class="$style['copy-url-button']"
+							@click="copy(fullServerUrl)"
+						/>
 					</span>
 				</div>
 			</li>
 			<li>
 				<div :class="$style.item">
 					<span :class="$style.label">
-						{{ i18n.baseText('settings.mcp.instructions.apiKey.part1') }}
-						<N8nLink to="/settings/api">{{ i18n.baseText('generic.apiKey') }}</N8nLink
-						>.
-						{{ i18n.baseText('settings.mcp.instructions.apiKey.part2') }}
+						{{ i18n.baseText('settings.mcp.instructions.apiKey.label') }}:
+					</span>
+					<span
+						:class="{
+							[$style.url]: true,
+							[$style['api-key']]: true,
+							[$style['redacted-key']]: redactedKey,
+						}"
+					>
+						<code>{{ props.apiKey.apiKey }}</code>
+						<div>
+							<N8nButton
+								type="tertiary"
+								icon="refresh"
+								:square="true"
+								:class="$style['copy-url-button']"
+								@click="refreshApiKey"
+							/>
+							<N8nButton
+								v-if="isSupported && !redactedKey"
+								type="tertiary"
+								:icon="copied ? 'check' : 'copy'"
+								:square="true"
+								:class="$style['copy-url-button']"
+								@click="copy(props.apiKey.apiKey)"
+							/>
+						</div>
 					</span>
 				</div>
 			</li>
@@ -106,19 +135,14 @@ const fullServerUrl = computed(() => {
 			<N8nInfoAccordion :title="i18n.baseText('settings.mcp.instructions.json')">
 				<template #customContent>
 					<N8nMarkdown :content="connectionCode"></N8nMarkdown>
-					<N8nTooltip
-						:disables="!isSupported"
-						:content="copied ? i18n.baseText('generic.copied') : i18n.baseText('generic.copy')"
-					>
-						<N8nButton
-							v-if="isSupported"
-							type="tertiary"
-							:icon="copied ? 'clipboard-check' : 'clipboard'"
-							:square="true"
-							:class="$style['copy-json-button']"
-							@click="copy(connectionString)"
-						/>
-					</N8nTooltip>
+					<N8nButton
+						v-if="isSupported"
+						type="tertiary"
+						:icon="copied ? 'check' : 'copy'"
+						:square="true"
+						:class="$style['copy-json-button']"
+						@click="copy(connectionString)"
+					/>
 				</template>
 			</N8nInfoAccordion>
 		</div>
@@ -156,7 +180,7 @@ const fullServerUrl = computed(() => {
 
 	.url {
 		display: flex;
-		align-items: stretch;
+		align-items: center;
 		gap: var(--spacing-2xs);
 		background: var(--color-background-xlight);
 		border: var(--border-base);
@@ -165,26 +189,38 @@ const fullServerUrl = computed(() => {
 		overflow: hidden;
 
 		code {
-			text-overflow: ellipsis;
-			overflow: hidden;
-			white-space: pre;
 			padding: var(--spacing-2xs) var(--spacing-3xs);
-		}
-
-		.copy-url-wrapper {
-			display: flex;
-			align-items: center;
-			border-left: var(--border-base);
 		}
 
 		.copy-url-button {
 			border: none;
 			border-radius: 0;
+			border-left: var(--border-base);
 		}
 
 		@media screen and (max-width: 820px) {
+			display: block;
 			word-wrap: break-word;
 			margin-top: var(--spacing-2xs);
+		}
+	}
+
+	.api-key {
+		code {
+			max-width: 300px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			direction: rtl;
+			text-align: left;
+		}
+
+		&.redacted-key {
+			code {
+				width: auto;
+				text-align: right;
+				direction: ltr;
+			}
 		}
 	}
 }
@@ -211,7 +247,7 @@ const fullServerUrl = computed(() => {
 .copy-json-button {
 	position: absolute;
 	top: var(--spacing-xl);
-	right: var(--spacing-2xl);
+	right: var(--spacing-xl);
 	display: none;
 }
 </style>

@@ -95,6 +95,8 @@ const tableActions = ref<Array<UserAction<WorkflowListItem>>>([
 	},
 ]);
 
+const apiKey = computed(() => mcpStore.currentUserMCPKey);
+
 const isOwner = computed(() => usersStore.isInstanceOwner);
 const isAdmin = computed(() => usersStore.isAdmin);
 
@@ -166,7 +168,13 @@ const onWorkflowAction = async (action: string, workflow: WorkflowListItem) => {
 
 onMounted(async () => {
 	documentTitle.set(i18n.baseText('settings.mcp'));
-	if (mcpStore.mcpAccessEnabled) await fetchAvailableWorkflows();
+	if (!mcpStore.mcpAccessEnabled) {
+		workflowsLoading.value = false;
+		return;
+	}
+	await fetchAvailableWorkflows();
+	// TODO: Add loading and error handling
+	await mcpStore.getOrCreateApiKey();
 });
 </script>
 <template>
@@ -207,7 +215,11 @@ onMounted(async () => {
 				<N8nHeading size="medium" :bold="true">
 					{{ i18n.baseText('settings.mcp.connection.info.heading') }}
 				</N8nHeading>
-				<MCPConnectionInstructions :base-url="rootStore.urlBaseEditor" />
+				<MCPConnectionInstructions
+					v-if="apiKey"
+					:base-url="rootStore.urlBaseEditor"
+					:api-key="apiKey"
+				/>
 			</div>
 			<div :class="$style['workflow-list-container']" data-test-id="mcp-workflow-list">
 				<div v-if="workflowsLoading">
