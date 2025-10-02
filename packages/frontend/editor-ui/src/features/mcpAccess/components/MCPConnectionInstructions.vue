@@ -9,6 +9,7 @@ import {
 	N8nMarkdown,
 	N8nText,
 	N8nTooltip,
+	N8nInfoTip,
 } from '@n8n/design-system';
 import type { ApiKey } from '@n8n/api-types';
 import { useMCPStore } from '@/features/mcpAccess/mcp.store';
@@ -128,6 +129,9 @@ const refreshApiKey = async () => {
 							/>
 						</div>
 					</span>
+					<N8nInfoTip v-if="!redactedKey" type="tooltip" theme="warning" tooltip-placement="right">
+						{{ i18n.baseText('settings.mcp.instructions.apiLey.newKey.warning') }}
+					</N8nInfoTip>
 				</div>
 			</li>
 		</ol>
