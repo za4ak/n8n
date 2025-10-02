@@ -28,7 +28,7 @@ export class ChangeValueTypesForInsights1759399811000 implements IrreversibleMig
 			const typeComment = '0: time_saved_minutes, 1: runtime_milliseconds, 2: success, 3: failure';
 
 			// Create temporary raw table with new value type, copy data, remove the original table and rename the temporary table
-			await createTable(tempInsightsRawTable)
+			await createTable(INSIGHTS_RAW_TEMP_TABLE_NAME)
 				.withColumns(
 					column('id').int.primary.autoGenerate2,
 					column('metaId').int.notNull,
@@ -37,21 +37,21 @@ export class ChangeValueTypesForInsights1759399811000 implements IrreversibleMig
 					column('timestamp').timestampTimezone(0).default('CURRENT_TIMESTAMP').notNull,
 				)
 				.withForeignKey('metaId', {
-					tableName: insightsMetadataTable,
+					tableName: INSIGHTS_METADATA_TABLE_NAME,
 					columnName: 'metaId',
 					onDelete: 'CASCADE',
 				});
 
 			// Copy data from the original table to the temporary table
-			await copyTable(insightsRawTable, tempInsightsRawTable);
+			await copyTable(INSIGHTS_RAW_TABLE_NAME, INSIGHTS_RAW_TEMP_TABLE_NAME);
 
 			// drop the original table
-			await dropTable(insightsRawTable);
+			await dropTable(INSIGHTS_RAW_TABLE_NAME);
 
 			// rename the temporary table to the original table name
 			await queryRunner.query(`ALTER TABLE ${tempInsightsRawTable} RENAME TO ${insightsRawTable};`);
 
-			await createTable(tempInsightsByPeriodTable)
+			await createTable(INSIGHTS_BY_PERIOD_TEMP_TABLE_NAME)
 				.withColumns(
 					column('id').int.primary.autoGenerate2,
 					column('metaId').int.notNull,
@@ -61,17 +61,17 @@ export class ChangeValueTypesForInsights1759399811000 implements IrreversibleMig
 					column('periodStart').default('CURRENT_TIMESTAMP').timestampTimezone(0),
 				)
 				.withForeignKey('metaId', {
-					tableName: insightsMetadataTable,
+					tableName: INSIGHTS_METADATA_TABLE_NAME,
 					columnName: 'metaId',
 					onDelete: 'CASCADE',
 				})
 				.withIndexOn(['periodStart', 'type', 'periodUnit', 'metaId'], true);
 
 			// Copy data from the original table to the temporary table
-			await copyTable(insightsByPeriodTable, tempInsightsByPeriodTable);
+			await copyTable(INSIGHTS_BY_PERIOD_TABLE_NAME, INSIGHTS_BY_PERIOD_TEMP_TABLE_NAME);
 
 			// drop the original table
-			await dropTable(insightsByPeriodTable);
+			await dropTable(INSIGHTS_BY_PERIOD_TABLE_NAME);
 
 			// rename the temporary table to the original table name
 			await queryRunner.query(
