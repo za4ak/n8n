@@ -24,7 +24,6 @@ export class ChangeValueTypesForInsights1759399811000 implements IrreversibleMig
 		if (isSqlite) {
 			const tempInsightsByPeriodTable = escape.tableName(INSIGHTS_BY_PERIOD_TEMP_TABLE_NAME);
 			const tempInsightsRawTable = escape.tableName(INSIGHTS_RAW_TEMP_TABLE_NAME);
-			const insightsMetadataTable = escape.tableName(INSIGHTS_METADATA_TABLE_NAME);
 			const typeComment = '0: time_saved_minutes, 1: runtime_milliseconds, 2: success, 3: failure';
 
 			// Create temporary raw table with new value type, copy data, remove the original table and rename the temporary table
