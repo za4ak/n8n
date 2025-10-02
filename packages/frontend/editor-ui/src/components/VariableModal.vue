@@ -62,7 +62,7 @@ const form = reactive<{
 }>({
 	key: props.variable?.key || '',
 	value: props.variable?.value || '',
-	projectId: props.variable?.project?.id ?? projectsStore.currentProjectId,
+	projectId: props.variable?.project?.id ?? projectsStore.currentProjectId ?? '',
 });
 
 const formValidation = reactive<{

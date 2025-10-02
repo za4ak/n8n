@@ -30,7 +30,12 @@ import {
 	N8nBadge,
 	N8nButton,
 	N8nCheckbox,
+	N8nIcon,
 	N8nInputLabel,
+	N8nLink,
+	N8nOption,
+	N8nSelect,
+	N8nText,
 	N8nTooltip,
 } from '@n8n/design-system';
 import { useAsyncState } from '@vueuse/core';
@@ -40,6 +45,7 @@ import ProjectHeader from '@/components/Projects/ProjectHeader.vue';
 import { useInsightsStore } from '@/features/insights/insights.store';
 import { useProjectPages } from '@/composables/useProjectPages';
 import InsightsSummary from '@/features/insights/components/InsightsSummary.vue';
+import { useProjectsStore } from '@/stores/projects.store';
 
 const settingsStore = useSettingsStore();
 const environmentsStore = useEnvironmentsStore();
@@ -53,6 +59,7 @@ const route = useRoute();
 const router = useRouter();
 const insightsStore = useInsightsStore();
 const overview = useProjectPages();
+const projectsStore = useProjectsStore();
 
 const layoutRef = useTemplateRef<ComponentExposed<typeof ResourcesListLayout>>('layoutRef');
 
@@ -96,6 +103,8 @@ const variables = computed<VariableResource[]>(() =>
 				}) as VariableResource,
 		),
 );
+
+const globalVariables = computed(() => environmentsStore.variables.filter((v) => !v.project));
 
 const canCreateVariables = computed(() => isFeatureEnabled.value && permissions.value.create);
 
@@ -162,17 +171,19 @@ const handleDeleteVariable = async (variable: EnvironmentVariable) => {
 	}
 };
 
-type Filters = BaseFilters & { incomplete?: boolean };
+type Filters = BaseFilters & { incomplete?: boolean; projectId: string };
 const updateFilter = (state: Filters) => {
 	void router.replace({ query: pickBy(state) as LocationQueryRaw });
-};
-const onSearchUpdated = (search: string) => {
-	updateFilter({ ...filters.value, search });
 };
 const filters = ref<Filters>({
 	...route.query,
 	incomplete: route.query.incomplete?.toString() === 'true',
+	projectId: route.query.projectId?.toString() || '',
 } as Filters);
+
+const onSearchUpdated = (search: string) => {
+	updateFilter({ ...filters.value, search });
+};
 
 const handleFilter = (resource: Resource, newFilters: BaseFilters, matches: boolean): boolean => {
 	const Resource = resource as EnvironmentVariable;
@@ -180,6 +191,14 @@ const handleFilter = (resource: Resource, newFilters: BaseFilters, matches: bool
 
 	if (filtersToApply.incomplete) {
 		matches = matches && !Resource.value;
+	}
+
+	if (filtersToApply.projectId) {
+		if (filtersToApply.projectId === 'global') {
+			matches = matches && !Resource.project;
+		} else {
+			matches = matches && Resource.project?.id === filtersToApply.projectId;
+		}
 	}
 
 	return matches;
@@ -195,15 +214,29 @@ const sortFns = {
 	nameDesc: (a: Resource, b: Resource) => nameSortFn(a, b, 'desc'),
 };
 
-const unavailableNoticeProps = computed(() => ({
-	emoji: '👋',
-	heading: i18n.baseText(uiStore.contextBasedTranslationKeys.variables.unavailable.title),
-	description: i18n.baseText(uiStore.contextBasedTranslationKeys.variables.unavailable.description),
-	buttonText: i18n.baseText(uiStore.contextBasedTranslationKeys.variables.unavailable.button),
-	buttonType: 'secondary' as const,
-	'onClick:button': goToUpgrade,
-	'data-test-id': 'unavailable-resources-list',
-}));
+const projectOptions = computed<Array<{ value: string; label: string }>>(() => {
+	const options: Array<{ value: string; label: string }> = [
+		{
+			value: '',
+			label: i18n.baseText('variables.modal.scope.all'),
+		},
+		{
+			value: 'global',
+			label: i18n.baseText('variables.modal.scope.global'),
+		},
+	];
+
+	options.push(
+		...projectsStore.availableProjects
+			.filter((project) => project.type !== 'personal')
+			.map((project) => ({
+				value: project.id,
+				label: project.name ?? project.id,
+			})),
+	);
+
+	return options;
+});
 
 function goToUpgrade() {
 	void usePageRedirectionHelper().goToUpgrade('variables', 'upgrade-variables');
@@ -293,6 +326,29 @@ onMounted(() => {
 					@update:model-value="setKeyValue('incomplete', $event)"
 				/>
 			</div>
+			<div v-if="!projectId" class="mb-s">
+				<N8nInputLabel
+					:label="i18n.baseText('forms.resourceFiltersDropdown.owner')"
+					:bold="false"
+					size="small"
+					color="text-base"
+					class="mb-3xs"
+				/>
+
+				<N8nSelect
+					v-model="filters.projectId"
+					size="large"
+					filterable
+					data-test-id="variable-modal-scope-select"
+				>
+					<N8nOption
+						v-for="option in projectOptions"
+						:key="option.value || 'global'"
+						:value="option.value"
+						:label="option.label"
+					/>
+				</N8nSelect>
+			</div>
 		</template>
 		<template v-if="!isFeatureEnabled" #preamble>
 			<N8nActionBox class="mb-m" v-bind="unavailableNoticeProps" />
@@ -366,6 +422,16 @@ onMounted(() => {
 					</div>
 				</td>
 			</tr>
+		</template>
+		<template #postdata>
+			<div class="mt-xs" v-if="projectId && globalVariables.length">
+				<N8nText v-if="projectId" size="small" color="text-secondary">
+					<N8nLink href="/home/variables" theme="text" size="small">
+						{{ globalVariables.length }} global variables
+					</N8nLink>
+					available in this project
+				</N8nText>
+			</div>
 		</template>
 	</ResourcesListLayout>
 </template>

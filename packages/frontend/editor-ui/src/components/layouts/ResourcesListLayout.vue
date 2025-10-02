@@ -109,6 +109,7 @@ const slots = defineSlots<{
 	empty(): unknown;
 	preamble(): unknown;
 	postamble(): unknown;
+	postdata(): unknown;
 	'add-button'(): unknown;
 	callout(): unknown;
 	filters(props: {
@@ -742,6 +743,10 @@ defineExpose({
 					>
 						<template #row="{ columns, row }">
 							<slot :data="row" :columns="columns" />
+						</template>
+
+						<template #postdata>
+							<slot name="postdata" />
 						</template>
 					</N8nDatatable>
 				</div>
