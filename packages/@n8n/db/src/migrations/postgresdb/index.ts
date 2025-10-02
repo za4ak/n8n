@@ -98,6 +98,7 @@ import { RemoveOldRoleColumn1750252139170 } from '../common/1750252139170-Remove
 import { CreateDataStoreTables1754475614601 } from '../common/1754475614601-CreateDataStoreTables';
 import { ReplaceDataStoreTablesWithDataTables1754475614602 } from '../common/1754475614602-ReplaceDataStoreTablesWithDataTables';
 import { AddTimestampsToRoleAndRoleIndexes1756906557570 } from '../common/1756906557570-AddTimestampsToRoleAndRoleIndexes';
+import { ChangeValueTypesForInsights1759399811000 } from '../common/1759399811000-ChangeValueTypesForInsights';
 import type { Migration } from '../migration-types';
 
 export const postgresMigrations: Migration[] = [
@@ -201,4 +202,5 @@ export const postgresMigrations: Migration[] = [
 	LinkRoleToProjectRelationTable1753953244168,
 	AddTimestampsToRoleAndRoleIndexes1756906557570,
 	AddProjectIdToVariableTable1758794506893,
+	ChangeValueTypesForInsights1759399811000,
 ];
