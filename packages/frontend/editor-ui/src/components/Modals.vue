@@ -97,6 +97,7 @@ import DynamicModalLoader from './DynamicModalLoader.vue';
 import NodeRecommendationModalV2 from '@/experiments/templateRecoV2/components/NodeRecommendationModal.vue';
 import NodeRecommendationModalV3 from '@/experiments/personalizedTemplatesV3/components/NodeRecommendationModal.vue';
 import VariableModal from '@/components/VariableModal.vue';
+import type { EnvironmentVariable } from '@/Interface';
 </script>
 
 <template>
@@ -379,7 +380,9 @@ import VariableModal from '@/components/VariableModal.vue';
 		</ModalRoot>
 
 		<ModalRoot :name="VARIABLE_MODAL_KEY">
-			<template #default="{ data }">
+			<template
+				#default="{ data }: { data: { mode: 'new' | 'edit'; variable?: EnvironmentVariable } }"
+			>
 				<VariableModal :mode="data?.mode ?? 'new'" :variable="data?.variable" />
 			</template>
 		</ModalRoot>

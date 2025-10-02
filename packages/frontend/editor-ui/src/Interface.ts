@@ -1021,7 +1021,7 @@ export interface EnvironmentVariable {
 	value: string;
 	project?: {
 		id: string;
-		name: string;
+		name: string | null;
 	};
 }
 

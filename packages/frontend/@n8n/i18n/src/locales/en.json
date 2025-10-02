@@ -2903,6 +2903,7 @@
 	"variables.modal.value.label": "Value",
 	"variables.modal.scope.label": "Scope",
 	"variables.modal.scope.global": "Global",
+	"variables.modal.scope.all": "All",
 	"variables.modal.button.cancel": "Cancel",
 	"variables.modal.button.save": "Save",
 	"variables.modal.error.keyExistsInProject": "The key already exists in this project",
