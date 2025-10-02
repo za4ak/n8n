@@ -50,7 +50,7 @@ const projectId = computed(() => {
 const getRouteConfigs = () => {
 	// For project pages
 	if (projectId.value) {
-		return {
+		const routes = {
 			workflows: {
 				name: VIEWS.PROJECTS_WORKFLOWS,
 				params: { projectId: projectId.value },

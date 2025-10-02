@@ -74,6 +74,7 @@ import {
 } from '@n8n/design-system';
 import ProjectNavigation from './Projects/ProjectNavigation.vue';
 import MainSidebarSourceControl from './MainSidebarSourceControl.vue';
+import { usePostHog } from '@/stores/posthog.store';
 
 const becomeTemplateCreatorStore = useBecomeTemplateCreatorStore();
 const cloudPlanStore = useCloudPlanStore();
