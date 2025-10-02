@@ -2,11 +2,13 @@
 import { ref, watch, computed } from 'vue';
 import type { RouteRecordName } from 'vue-router';
 import { useRoute } from 'vue-router';
-import { VIEWS } from '@/constants';
+import { PROJECT_VARIABLES_EXPERIMENT, VIEWS } from '@/constants';
 import { useI18n } from '@n8n/i18n';
 import type { BaseTextKey } from '@n8n/i18n';
 import type { TabOptions } from '@n8n/design-system';
 import { processDynamicTabs, type DynamicTabOptions } from '@/utils/modules/tabUtils';
+import { usePostHog } from '@/stores/posthog.store';
+import { useProjectsStore } from '@/stores/projects.store';
 
 type Props = {
 	showSettings?: boolean;
@@ -24,6 +26,15 @@ const props = withDefaults(defineProps<Props>(), {
 
 const locale = useI18n();
 const route = useRoute();
+const posthogStore = usePostHog();
+const projectStore = useProjectsStore();
+
+const isProjectVariablesEnabled = computed(() =>
+	posthogStore.isVariantEnabled(
+		PROJECT_VARIABLES_EXPERIMENT.name,
+		PROJECT_VARIABLES_EXPERIMENT.variant,
+	),
+);
 
 const selectedTab = ref<RouteRecordName | null | undefined>('');
 
@@ -51,6 +62,10 @@ const getRouteConfigs = () => {
 				name: VIEWS.PROJECTS_EXECUTIONS,
 				params: { projectId: projectId.value },
 			},
+			variables: {
+				name: VIEWS.PROJECTS_VARIABLES,
+				params: { projectId: projectId.value },
+			},
 		};
 	}
 
@@ -60,6 +75,7 @@ const getRouteConfigs = () => {
 			workflows: { name: VIEWS.SHARED_WORKFLOWS },
 			credentials: { name: VIEWS.SHARED_CREDENTIALS },
 			executions: { name: VIEWS.NOT_FOUND },
+			variables: { name: VIEWS.NOT_FOUND },
 		};
 	}
 
@@ -68,6 +84,7 @@ const getRouteConfigs = () => {
 		workflows: { name: VIEWS.WORKFLOWS },
 		credentials: { name: VIEWS.CREDENTIALS },
 		executions: { name: VIEWS.EXECUTIONS },
+		variables: { name: VIEWS.VARIABLES },
 	};
 };
 
@@ -94,6 +111,10 @@ const options = computed<Array<TabOptions<string>>>(() => {
 
 	if (props.showExecutions) {
 		tabs.push(createTab('mainSidebar.executions', 'executions', routes));
+	}
+
+	if (isProjectVariablesEnabled.value && projectStore.currentProject?.type !== 'personal') {
+		tabs.push(createTab('mainSidebar.variables', 'variables', routes));
 	}
 
 	if (props.additionalTabs?.length) {
