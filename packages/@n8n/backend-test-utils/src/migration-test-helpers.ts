@@ -70,6 +70,10 @@ export function createTestMigrationContext(dataSource: DataSource): TestMigratio
 export async function initDbUpToMigration(beforeMigrationName: string): Promise<void> {
 	const dataSource = Container.get(DataSource);
 
+	if (!Array.isArray(dataSource.options.migrations)) {
+		throw new UnexpectedError('Database migrations are not an array');
+	}
+
 	const allMigrations = dataSource.options.migrations as Migration[];
 	const targetIndex = allMigrations.findIndex((m) => m.name === beforeMigrationName);
 
