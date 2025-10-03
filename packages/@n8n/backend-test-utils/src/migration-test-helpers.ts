@@ -1,6 +1,7 @@
-import { DbConnection, wrapMigration, type Migration } from '@n8n/db';
+import { GlobalConfig } from '@n8n/config';
+import { type DatabaseType, DbConnection, wrapMigration, type Migration } from '@n8n/db';
 import { Container } from '@n8n/di';
-import { DataSource } from '@n8n/typeorm';
+import { DataSource, type QueryRunner } from '@n8n/typeorm';
 import { UnexpectedError } from 'n8n-workflow';
 
 async function reinitializeDataSource(): Promise<void> {
@@ -15,6 +16,48 @@ function wrapMigrationsOnce(migrations: Migration[]): void {
 	for (const migration of migrations) {
 		wrapMigration(migration);
 	}
+}
+
+/**
+ * Test migration context with database-specific helpers (similar to MigrationContext).
+ */
+export interface TestMigrationContext {
+	queryRunner: QueryRunner;
+	tablePrefix: string;
+	dbType: DatabaseType;
+	isMysql: boolean;
+	isSqlite: boolean;
+	isPostgres: boolean;
+	escape: {
+		columnName(name: string): string;
+		tableName(name: string): string;
+		indexName(name: string): string;
+	};
+}
+
+/**
+ * Create a test migration context with database-specific helpers.
+ * Provides the same utilities that migrations have access to.
+ */
+export function createTestMigrationContext(dataSource: DataSource): TestMigrationContext {
+	const globalConfig = Container.get(GlobalConfig);
+	const dbType = globalConfig.database.type;
+	const tablePrefix = globalConfig.database.tablePrefix;
+	const queryRunner = dataSource.createQueryRunner();
+
+	return {
+		queryRunner,
+		tablePrefix,
+		dbType,
+		isMysql: ['mariadb', 'mysqldb'].includes(dbType),
+		isSqlite: dbType === 'sqlite',
+		isPostgres: dbType === 'postgresdb',
+		escape: {
+			columnName: (name) => queryRunner.connection.driver.escape(name),
+			tableName: (name) => queryRunner.connection.driver.escape(`${tablePrefix}${name}`),
+			indexName: (name) => queryRunner.connection.driver.escape(`IDX_${tablePrefix}${name}`),
+		},
+	};
 }
 
 /**
