@@ -3,24 +3,18 @@ import { Container } from '@n8n/di';
 import { DataSource } from '@n8n/typeorm';
 import { UnexpectedError } from 'n8n-workflow';
 
+async function reinitializeDataSource(): Promise<void> {
+	await Container.get(DbConnection).close();
+	await Container.get(DbConnection).init();
+}
+
 /**
  * Wrap migrations only if not already wrapped to prevent double-wrapping.
  */
 function wrapMigrationsOnce(migrations: Migration[]): void {
 	for (const migration of migrations) {
-		// Check if already wrapped by looking for our marker
-		const prototype = migration.prototype as unknown as { __n8n_wrapped?: boolean };
-		if (!prototype.__n8n_wrapped) {
-			console.log(`Wrapping migration ${migration.name}`);
-			wrapMigration(migration);
-			prototype.__n8n_wrapped = true;
-		}
+		wrapMigration(migration);
 	}
-}
-
-async function reinitializeDataSource(): Promise<void> {
-	await Container.get(DbConnection).close();
-	await Container.get(DbConnection).init();
 }
 
 /**
