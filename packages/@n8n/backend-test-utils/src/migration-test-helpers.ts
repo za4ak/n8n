@@ -10,9 +10,9 @@ async function reinitializeDataSource(): Promise<void> {
 }
 
 /**
- * Wrap migrations only if not already wrapped to prevent double-wrapping.
+ * Wrap migrations.
  */
-function wrapMigrationsOnce(migrations: Migration[]): void {
+function wrapMigrations(migrations: Migration[]): void {
 	for (const migration of migrations) {
 		wrapMigration(migration);
 	}
@@ -85,7 +85,7 @@ export async function initDbUpToMigration(beforeMigrationName: string): Promise<
 		// Need to reinitialize the data source to rebuild the migrations
 		await reinitializeDataSource();
 		// Wrap and run migrations
-		wrapMigrationsOnce(migrationsToRun);
+		wrapMigrations(migrationsToRun);
 		await dataSource.runMigrations({
 			transaction: 'each',
 		});
@@ -120,7 +120,7 @@ export async function runSingleMigration(migrationName: string): Promise<void> {
 	try {
 		// Need to reinitialize the data source to rebuild the migrations
 		await reinitializeDataSource();
-		wrapMigrationsOnce([migration]);
+		wrapMigrations([migration]);
 		await dataSource.runMigrations({
 			transaction: 'each',
 		});
